@@ -366,7 +366,7 @@ resource "aws_instance" "app_server" {
 
 // Outputs
 output "vault_root_token" {
-  value     = hcp_vault_cluster_admin_token.stoffee_io.token
+  value     = nonsensitive(hcp_vault_cluster_admin_token.stoffee_io.token)
   sensitive = true
 }
 
@@ -379,11 +379,11 @@ output "app_server_public_ip" {
 }
 
 output "ansible_role_id" {
-  value     = vault_approle_auth_backend_role.ansible.role_id
+  value     = nonsensitive(vault_approle_auth_backend_role.ansible.role_id)
   sensitive = true
 }
 
 output "ansible_secret_id" {
-  value     = vault_approle_auth_backend_role_secret_id.ansible.secret_id
+  value     = nonsensitive(vault_approle_auth_backend_role_secret_id.ansible.secret_id)
   sensitive = true
 }
