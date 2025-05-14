@@ -1,0 +1,60 @@
+from flask import Flask, jsonify
+import os
+
+app = Flask(__name__)
+
+# Get environment variables set by systemd service
+DB_USERNAME = os.environ.get('DB_USERNAME', 'default_user')
+DB_PASSWORD = os.environ.get('DB_PASSWORD', 'default_password')
+API_KEY = os.environ.get('API_KEY', 'default_key')
+
+@app.route('/')
+def index():
+    return """
+    <html>
+      <head>
+        <title>Vault Demo App</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }
+          .container { max-width: 800px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+          h1 { color: #1563ff; }
+          .secret { background: #f1f1f1; padding: 15px; border-radius: 5px; margin-top: 20px; }
+          .truncated { color: #666; }
+          .footer { margin-top: 30px; font-size: 0.9em; color: #666; border-top: 1px solid #eee; padding-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>HashiCorp Vault Demo Application</h1>
+          <p>This application demonstrates secure credential management using HashiCorp Vault and Ansible:</p>
+          
+          <div class="secret">
+            <p><strong>Database Username:</strong> {username}</p>
+            <p><strong>Database Password:</strong> <span class="truncated">{password_preview}...</span></p>
+            <p><strong>API Key:</strong> <span class="truncated">{api_key_preview}...</span></p>
+          </div>
+          
+          <p>These credentials were securely retrieved from Vault using Ansible during deployment.</p>
+          
+          <div class="footer">
+            <p>HashiCorp Vault and Ansible Integration Demo</p>
+          </div>
+        </div>
+      </body>
+    </html>
+    """.format(
+        username=DB_USERNAME,
+        password_preview=DB_PASSWORD[:3] if DB_PASSWORD else "***",
+        api_key_preview=API_KEY[:3] if API_KEY else "***"
+    )
+
+@app.route('/api/status')
+def status():
+    return jsonify({
+        "status": "ok",
+        "db_configured": bool(DB_USERNAME and DB_PASSWORD),
+        "api_configured": bool(API_KEY)
+    })
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)

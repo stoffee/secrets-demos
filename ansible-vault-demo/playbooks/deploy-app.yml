@@ -1,0 +1,72 @@
+---
+- name: Deploy Application with Vault Secrets
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+  tasks:
+    - name: Run vault-auth.yml playbook
+      ansible.builtin.command:
+        cmd: ansible-playbook /opt/ansible-demo/playbooks/vault-auth.yml
+      register: auth_result
+      
+    - name: Run get-secrets.yml playbook
+      ansible.builtin.command:
+        cmd: ansible-playbook /opt/ansible-demo/playbooks/get-secrets.yml
+      register: get_secrets_result
+      
+    - name: Install required packages
+      ansible.builtin.dnf:
+        name:
+          - python3
+          - python3-pip
+        state: present
+        
+    - name: Install Flask
+      ansible.builtin.pip:
+        name: flask
+        state: present
+        
+    - name: Create application directory
+      ansible.builtin.file:
+        path: /opt/demo-app
+        state: directory
+        mode: '0755'
+        
+    - name: Create application file
+      ansible.builtin.template:
+        src: /opt/ansible-demo/playbooks/templates/app.py.j2
+        dest: /opt/demo-app/app.py
+        mode: '0644'
+      
+    - name: Create systemd service file
+      ansible.builtin.template:
+        src: /opt/ansible-demo/playbooks/templates/demo-app.service.j2
+        dest: /etc/systemd/system/demo-app.service
+        mode: '0644'
+      
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        
+    - name: Start and enable the application
+      ansible.builtin.systemd:
+        name: demo-app
+        state: started
+        enabled: yes
+        
+    - name: Open firewall for Flask (if firewalld is running)
+      ansible.builtin.firewalld:
+        port: 5000/tcp
+        permanent: yes
+        state: enabled
+      ignore_errors: yes
+      
+    - name: Restart firewalld (if it's running)
+      ansible.builtin.service:
+        name: firewalld
+        state: restarted
+      ignore_errors: yes
+      
+    - name: Show application URL
+      debug:
+        msg: "Application is running at http://{{ ansible_host }}:5000"

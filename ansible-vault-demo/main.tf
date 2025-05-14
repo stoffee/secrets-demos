@@ -353,11 +353,87 @@ resource "aws_instance" "app_server" {
   key_name               = var.ssh_key_name
   
   user_data = <<-EOF
-              #!/bin/bash
-              dnf update -y
-              dnf install -y python3 python3-pip
-              pip3 install flask
-              EOF
+#!/bin/bash
+# Update system
+dnf update -y
+
+# Install required packages
+dnf install -y python3 python3-pip git
+
+# Install Ansible and required packages
+pip3 install ansible hvac requests
+
+# Create directory for Ansible project
+mkdir -p /opt/ansible-demo
+cd /opt/ansible-demo
+
+# Create vault credentials directory
+mkdir -p /root/.vault
+
+# Clone the secrets-demos repository
+git clone https://github.com/stoffee/secrets-demos.git /tmp/secrets-demos
+
+# Copy the ansible-vault-demo files to the correct location
+cp -r /tmp/secrets-demos/ansible-vault-demo/* /opt/ansible-demo/
+cp -r /tmp/secrets-demos/ansible-vault-demo/.* /opt/ansible-demo/ 2>/dev/null || true
+
+# Copy ansible.cfg to the correct location
+cp /opt/ansible-demo/ansible.cfg /etc/ansible/ansible.cfg
+
+# Create script to write Vault credentials
+cat > /opt/ansible-demo/scripts/setup-vault-auth.sh << 'VAULT_SCRIPT'
+#!/bin/bash
+VAULT_ADDR="${hcp_vault_cluster.hcp_vault.vault_public_endpoint_url}"
+ROLE_ID="${vault_approle_auth_backend_role.ansible.role_id}"
+SECRET_ID="${vault_approle_auth_backend_role_secret_id.ansible.secret_id}"
+
+# Create approle file
+echo "role_id=$ROLE_ID" > /root/.vault/approle
+echo "secret_id=$SECRET_ID" >> /root/.vault/approle
+chmod 600 /root/.vault/approle
+
+# Create vault environment file
+echo "export VAULT_ADDR=$VAULT_ADDR" > /opt/ansible-demo/vault-env.sh
+chmod +x /opt/ansible-demo/vault-env.sh
+
+# Source the environment variables
+source /opt/ansible-demo/vault-env.sh
+VAULT_SCRIPT
+
+# Make script executable and run it
+chmod +x /opt/ansible-demo/scripts/setup-vault-auth.sh
+/opt/ansible-demo/scripts/setup-vault-auth.sh
+
+# Create a script to run the demo
+cat > /opt/ansible-demo/run-demo.sh << 'DEMO_SCRIPT'
+#!/bin/bash
+source /opt/ansible-demo/vault-env.sh
+cd /opt/ansible-demo
+
+echo "Step 1: Authenticating to Vault..."
+ansible-playbook playbooks/vault-auth.yml
+
+echo "Step 2: Retrieving secrets from Vault..."
+ansible-playbook playbooks/get-secrets.yml
+
+echo "Step 3: Deploying application..."
+ansible-playbook playbooks/deploy-app.yml
+
+echo "Demo setup complete! Access the application at:"
+echo "http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):5000"
+
+echo "To rotate secrets, run:"
+echo "ansible-playbook playbooks/rotate-secrets.yml"
+DEMO_SCRIPT
+
+# Make demo script executable
+chmod +x /opt/ansible-demo/run-demo.sh
+
+# Run the demo automatically
+/opt/ansible-demo/run-demo.sh > /var/log/demo-setup.log 2>&1 &
+
+echo "Setup complete" > /tmp/setup_complete.txt
+EOF
   
   tags = {
     Name = "app-server-${var.prefix}"
@@ -383,4 +459,9 @@ output "ansible_role_id" {
 
 output "ansible_secret_id" {
   value     = nonsensitive(vault_approle_auth_backend_role_secret_id.ansible.secret_id)
+}
+
+# Output the Ansible controller's public IP
+output "ansible_controller_public_ip" {
+  value = aws_instance.ansible_controller.public_ip
 }

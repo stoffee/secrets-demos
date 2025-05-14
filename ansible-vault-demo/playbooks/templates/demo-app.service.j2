@@ -1,0 +1,15 @@
+[Unit]
+Description=Vault Demo Flask Application
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/opt/demo-app
+ExecStart=/usr/bin/python3 /opt/demo-app/app.py
+Restart=always
+Environment=DB_USERNAME={{ db_username }}
+Environment=DB_PASSWORD={{ db_password }}
+Environment=API_KEY={{ api_key }}
+
+[Install]
+WantedBy=multi-user.target
