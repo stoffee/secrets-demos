@@ -49,3 +49,8 @@ Icon
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
+
+# VS Code specific files
+.vscode/
+*.code-workspace
+.history/
