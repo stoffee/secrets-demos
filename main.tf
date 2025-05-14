@@ -39,8 +39,8 @@ provider "tfe" {
 // Use the cloud provider AWS to provision resources
 provider "aws" {
   region     = var.region
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
+#  access_key = var.aws_access_key
+#  secret_key = var.aws_secret_key
 }
 
 provider "random" {}
