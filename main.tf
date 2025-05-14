@@ -190,26 +190,6 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-// Create application server
-resource "aws_instance" "app_server" {
-  ami                    = "ami-080c01c53e80e8a3d" // RHEL 9 latest in us-west-2
-  instance_type          = "t2.micro"
-  subnet_id              = aws_subnet.app_subnet.id
-  vpc_security_group_ids = [aws_security_group.app_sg.id]
-  key_name               = var.ssh_key_name
-  
-  user_data = <<-EOF
-              #!/bin/bash
-              dnf update -y
-              dnf install -y python3 python3-pip
-              pip3 install flask
-              EOF
-  
-  tags = {
-    Name = "app-server-${var.prefix}"
-  }
-}
-
 // Vault auth methods and policies setup
 resource "vault_auth_backend" "userpass" {
   type = "userpass"
@@ -335,6 +315,53 @@ resource "random_password" "db_password" {
 resource "random_password" "api_key" {
   length  = 24
   special = false
+}
+
+
+# Add this data source to your main.tf
+data "aws_ami" "rhel9" {
+  most_recent = true
+  owners      = ["309956199498"] # Red Hat's owner ID
+
+  filter {
+    name   = "name"
+    values = ["RHEL-9*"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+# Then modify your EC2 instance resource
+resource "aws_instance" "app_server" {
+  ami                    = data.aws_ami.rhel9.id  # Use the data source
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.app_subnet.id
+  vpc_security_group_ids = [aws_security_group.app_sg.id]
+  key_name               = var.ssh_key_name
+  
+  user_data = <<-EOF
+              #!/bin/bash
+              dnf update -y
+              dnf install -y python3 python3-pip
+              pip3 install flask
+              EOF
+  
+  tags = {
+    Name = "app-server-${var.prefix}"
+  }
 }
 
 // Outputs
