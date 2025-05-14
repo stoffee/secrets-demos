@@ -463,5 +463,5 @@ output "ansible_secret_id" {
 
 # Output the Ansible controller's public IP
 output "ansible_controller_public_ip" {
-  value = aws_instance.ansible_controller.public_ip
+  value = aws_instance.app_server.public_ip
 }
