@@ -21,6 +21,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~>3.7.2"
     }
+    template = {
+      source  = "hashicorp/template"
+      version = "~>2.2.0"
+    }
   }
 }
 
@@ -346,43 +350,80 @@ data "aws_ami" "rhel9" {
 
 # Then modify your EC2 instance resource
 resource "aws_instance" "app_server" {
-  ami                    = data.aws_ami.rhel9.id  # Use the data source
+  ami                    = data.aws_ami.rhel9.id
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.app_subnet.id
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   key_name               = var.ssh_key_name
   
-  user_data = <<-EOF
+  # Use the cloud-init config
+  user_data_base64 = data.template_cloudinit_config.ansible_config.rendered
+  
+  tags = {
+    Name = "app-server-${var.prefix}"
+  }
+}
+
+data "template_cloudinit_config" "ansible_config" {
+  gzip          = true
+  base64_encode = true
+
+  # Part 1: Install packages
+  part {
+    content_type = "text/cloud-config"
+    content = <<-EOF
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - git
+  - python3
+  - python3-pip
+EOF
+  }
+
+  # Part 2: Install Ansible and clone repo
+  part {
+    content_type = "text/x-shellscript"
+    content = <<-EOF
 #!/bin/bash
-# Update system
-dnf update -y
-
-# Install required packages
-dnf install -y python3 python3-pip git
-
 # Install Ansible and required packages
 pip3 install ansible hvac requests
 
-# Create directory for Ansible project
+# Create directories
 mkdir -p /opt/ansible-demo
-cd /opt/ansible-demo
-
-# Create vault credentials directory
 mkdir -p /root/.vault
 
-# Clone the secrets-demos repository
-git clone https://github.com/stoffee/secrets-demos.git /tmp/secrets-demos
+# Clone the repository
+git clone https://github.com/stoffee/secrets-demos.git /tmp/secrets-demos || {
+  echo "Failed to clone repository - retrying with verbose output"
+  git clone -v https://github.com/stoffee/secrets-demos.git /tmp/secrets-demos || {
+    echo "Repository clone failed again. Checking connectivity:"
+    curl -v https://github.com/stoffee/secrets-demos
+    echo "Clone failure details logged."
+  }
+}
 
-# Copy the ansible-vault-demo files to the correct location
-cp -r /tmp/secrets-demos/ansible-vault-demo/* /opt/ansible-demo/
-cp -r /tmp/secrets-demos/ansible-vault-demo/.* /opt/ansible-demo/ 2>/dev/null || true
+# Copy files (only if clone succeeded)
+if [ -d "/tmp/secrets-demos" ]; then
+  cp -r /tmp/secrets-demos/ansible-vault-demo/* /opt/ansible-demo/
+  cp -r /tmp/secrets-demos/ansible-vault-demo/.* /opt/ansible-demo/ 2>/dev/null || true
+  
+  # Create ansible.cfg directory if needed
+  mkdir -p /etc/ansible
+  
+  # Copy ansible.cfg
+  cp /opt/ansible-demo/ansible.cfg /etc/ansible/ansible.cfg || echo "Failed to copy ansible.cfg"
+fi
+EOF
+  }
 
-# Copy ansible.cfg to the correct location
-cp /opt/ansible-demo/ansible.cfg /etc/ansible/ansible.cfg
-
-# Create script to write Vault credentials
-cat > /opt/ansible-demo/scripts/setup-vault-auth.sh << 'VAULT_SCRIPT'
+  # Part 3: Setup Vault credentials
+  part {
+    content_type = "text/x-shellscript"
+    content = <<-EOF
 #!/bin/bash
+# Create Vault credentials
 VAULT_ADDR="${hcp_vault_cluster.hcp_vault.vault_public_endpoint_url}"
 ROLE_ID="${vault_approle_auth_backend_role.ansible.role_id}"
 SECRET_ID="${vault_approle_auth_backend_role_secret_id.ansible.secret_id}"
@@ -398,15 +439,15 @@ chmod +x /opt/ansible-demo/vault-env.sh
 
 # Source the environment variables
 source /opt/ansible-demo/vault-env.sh
-VAULT_SCRIPT
+EOF
+  }
 
-# Make script executable and run it
-chmod +x /opt/ansible-demo/scripts/setup-vault-auth.sh
-/opt/ansible-demo/scripts/setup-vault-auth.sh
-
-# Create a script to run the demo
-cat > /opt/ansible-demo/run-demo.sh << 'DEMO_SCRIPT'
+  # Part 4: Run the demo
+  part {
+    content_type = "text/x-shellscript"
+    content = <<-EOF
 #!/bin/bash
+# Run the demo
 source /opt/ansible-demo/vault-env.sh
 cd /opt/ansible-demo
 
@@ -424,19 +465,7 @@ echo "http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):5000
 
 echo "To rotate secrets, run:"
 echo "ansible-playbook playbooks/rotate-secrets.yml"
-DEMO_SCRIPT
-
-# Make demo script executable
-chmod +x /opt/ansible-demo/run-demo.sh
-
-# Run the demo automatically
-/opt/ansible-demo/run-demo.sh > /var/log/demo-setup.log 2>&1 &
-
-echo "Setup complete" > /tmp/setup_complete.txt
 EOF
-  
-  tags = {
-    Name = "app-server-${var.prefix}"
   }
 }
 
