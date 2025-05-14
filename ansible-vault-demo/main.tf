@@ -356,8 +356,8 @@ resource "aws_instance" "app_server" {
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   key_name               = var.ssh_key_name
   
-  # Use the cloud-init config
-  user_data_base64 = data.template_cloudinit_config.ansible_config.rendered
+  # Use the cloud-init config with user_data_base64
+  user_data_base64       = data.template_cloudinit_config.ansible_config.rendered
   
   tags = {
     Name = "app-server-${var.prefix}"
@@ -368,104 +368,9 @@ data "template_cloudinit_config" "ansible_config" {
   gzip          = true
   base64_encode = true
 
-  # Part 1: Install packages
-  part {
-    content_type = "text/cloud-config"
-    content = <<-EOF
-#cloud-config
-package_update: true
-package_upgrade: true
-packages:
-  - git
-  - python3
-  - python3-pip
-EOF
-  }
-
-  # Part 2: Install Ansible and clone repo
   part {
     content_type = "text/x-shellscript"
-    content = <<-EOF
-#!/bin/bash
-# Install Ansible and required packages
-pip3 install ansible hvac requests
-
-# Create directories
-mkdir -p /opt/ansible-demo
-mkdir -p /root/.vault
-
-# Clone the repository
-git clone https://github.com/stoffee/secrets-demos.git /tmp/secrets-demos || {
-  echo "Failed to clone repository - retrying with verbose output"
-  git clone -v https://github.com/stoffee/secrets-demos.git /tmp/secrets-demos || {
-    echo "Repository clone failed again. Checking connectivity:"
-    curl -v https://github.com/stoffee/secrets-demos
-    echo "Clone failure details logged."
-  }
-}
-
-# Copy files (only if clone succeeded)
-if [ -d "/tmp/secrets-demos" ]; then
-  cp -r /tmp/secrets-demos/ansible-vault-demo/* /opt/ansible-demo/
-  cp -r /tmp/secrets-demos/ansible-vault-demo/.* /opt/ansible-demo/ 2>/dev/null || true
-  
-  # Create ansible.cfg directory if needed
-  mkdir -p /etc/ansible
-  
-  # Copy ansible.cfg
-  cp /opt/ansible-demo/ansible.cfg /etc/ansible/ansible.cfg || echo "Failed to copy ansible.cfg"
-fi
-EOF
-  }
-
-  # Part 3: Setup Vault credentials
-  part {
-    content_type = "text/x-shellscript"
-    content = <<-EOF
-#!/bin/bash
-# Create Vault credentials
-VAULT_ADDR="${hcp_vault_cluster.hcp_vault.vault_public_endpoint_url}"
-ROLE_ID="${vault_approle_auth_backend_role.ansible.role_id}"
-SECRET_ID="${vault_approle_auth_backend_role_secret_id.ansible.secret_id}"
-
-# Create approle file
-echo "role_id=$ROLE_ID" > /root/.vault/approle
-echo "secret_id=$SECRET_ID" >> /root/.vault/approle
-chmod 600 /root/.vault/approle
-
-# Create vault environment file
-echo "export VAULT_ADDR=$VAULT_ADDR" > /opt/ansible-demo/vault-env.sh
-chmod +x /opt/ansible-demo/vault-env.sh
-
-# Source the environment variables
-source /opt/ansible-demo/vault-env.sh
-EOF
-  }
-
-  # Part 4: Run the demo
-  part {
-    content_type = "text/x-shellscript"
-    content = <<-EOF
-#!/bin/bash
-# Run the demo
-source /opt/ansible-demo/vault-env.sh
-cd /opt/ansible-demo
-
-echo "Step 1: Authenticating to Vault..."
-ansible-playbook playbooks/vault-auth.yml
-
-echo "Step 2: Retrieving secrets from Vault..."
-ansible-playbook playbooks/get-secrets.yml
-
-echo "Step 3: Deploying application..."
-ansible-playbook playbooks/deploy-app.yml
-
-echo "Demo setup complete! Access the application at:"
-echo "http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):5000"
-
-echo "To rotate secrets, run:"
-echo "ansible-playbook playbooks/rotate-secrets.yml"
-EOF
+    content      = data.template_file.ansible_user_data.rendered
   }
 }
 
