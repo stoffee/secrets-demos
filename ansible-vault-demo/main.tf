@@ -364,13 +364,18 @@ resource "aws_instance" "app_server" {
   }
 }
 
+# Create the cloud-init config
 data "template_cloudinit_config" "ansible_config" {
   gzip          = true
   base64_encode = true
 
   part {
     content_type = "text/x-shellscript"
-    content      = data.template_file.ansible_user_data.rendered
+    content      = templatefile("${path.module}/templates/ansible-user-data.sh.tpl", {
+      vault_addr = hcp_vault_cluster.hcp_vault.vault_public_endpoint_url,
+      role_id    = vault_approle_auth_backend_role.ansible.role_id,
+      secret_id  = vault_approle_auth_backend_role_secret_id.ansible.secret_id
+    })
   }
 }
 
