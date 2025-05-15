@@ -132,7 +132,6 @@ data "aws_ami" "rhel9" {
   }
 }
 
-# Then modify your EC2 instance resource
 resource "aws_instance" "app_server" {
   ami                    = data.aws_ami.rhel9.id
   instance_type          = "t2.micro"
@@ -140,25 +139,73 @@ resource "aws_instance" "app_server" {
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   key_name               = var.ssh_key_name
   
-  # Use the cloud-init config with user_data_base64
-  user_data_base64       = data.template_cloudinit_config.ansible_config.rendered
+  # Use the cloud-init config with user_data
+  user_data              = data.cloudinit_config.ansible_config.rendered
   
   tags = {
     Name = "app-server-${var.prefix}"
   }
 }
 
-# Create the cloud-init config
-data "template_cloudinit_config" "ansible_config" {
+# Create the cloud-init config using multiple parts for a cleaner setup
+data "cloudinit_config" "ansible_config" {
   gzip          = true
   base64_encode = true
 
+  # Part 1: System setup and package installation
   part {
+    filename     = "01-system-setup.sh"
     content_type = "text/x-shellscript"
-    content      = templatefile("${path.module}/templates/ansible-user-data.sh.tpl", {
+    content = templatefile("${path.module}/templates/01-system-setup.sh.tpl", {})
+  }
+
+  # Part 2: Vault authentication setup
+  part {
+    filename     = "02-vault-auth-setup.sh"
+    content_type = "text/x-shellscript"
+    content = templatefile("${path.module}/templates/02-vault-auth-setup.sh.tpl", {
       vault_addr = hcp_vault_cluster.hcp_vault.vault_public_endpoint_url,
       role_id    = vault_approle_auth_backend_role.ansible.role_id,
       secret_id  = vault_approle_auth_backend_role_secret_id.ansible.secret_id
     })
+  }
+
+  # Part 3: Ansible project setup
+  part {
+    filename     = "03-ansible-project-setup.sh"
+    content_type = "text/x-shellscript"
+    content = templatefile("${path.module}/templates/03-ansible-project-setup.sh.tpl", {})
+  }
+
+  # Part 4: Run demo setup
+  part {
+    filename     = "04-run-demo.sh"
+    content_type = "text/x-shellscript"
+    content = templatefile("${path.module}/templates/04-run-demo.sh.tpl", {})
+  }
+
+  # Part 5: Configure firewall for Flask application
+  part {
+    filename     = "05-configure-firewall.sh"
+    content_type = "text/x-shellscript"
+    content = <<-EOF
+    #!/bin/bash
+    set -ex
+    
+    # Log all output for debugging
+    exec > >(tee /var/log/user-data-part5.log) 2>&1
+    echo "Configuring firewall for Flask application at $(date)"
+    
+    # Check if firewalld is installed and running
+    if command -v firewall-cmd &> /dev/null && systemctl is-active --quiet firewalld; then
+      echo "Enabling port 5000/tcp in firewalld..."
+      firewall-cmd --permanent --add-port=5000/tcp
+      firewall-cmd --reload
+    else
+      echo "Firewalld not installed or not running, skipping firewall configuration"
+    fi
+    
+    echo "Firewall configuration completed at $(date)"
+    EOF
   }
 }
