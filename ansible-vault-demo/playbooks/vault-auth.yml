@@ -32,7 +32,7 @@
     - name: Save Vault token
       ansible.builtin.copy:
         content: "{{ vault_auth.json.auth.client_token }}"
-        dest: /root/.vault/token
+        dest: /root/.vault/root_token
         mode: '0600'
       no_log: true
       
