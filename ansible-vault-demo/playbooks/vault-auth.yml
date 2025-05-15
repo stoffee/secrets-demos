@@ -25,6 +25,8 @@
         body:
           role_id: "{{ role_id.stdout }}"
           secret_id: "{{ secret_id.stdout }}"
+        headers:
+          X-Vault-Namespace: "admin"
         status_code: 200
       register: vault_auth
       no_log: true
