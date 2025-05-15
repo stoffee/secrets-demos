@@ -40,7 +40,6 @@ resource "hcp_vault_cluster_admin_token" "stoffee_io" {
 
 
 // Vault auth methods and policies setup
-/*
 resource "vault_auth_backend" "userpass" {
   type = "userpass"
   tune {
@@ -48,7 +47,6 @@ resource "vault_auth_backend" "userpass" {
     default_lease_ttl = "2h45m"
   }
 }
-*/
 
 resource "vault_generic_endpoint" "userpass_admin" {
   depends_on           = [vault_auth_backend.userpass, hcp_vault_cluster_admin_token.stoffee_io]
@@ -62,7 +60,6 @@ resource "vault_generic_endpoint" "userpass_admin" {
 EOT
 }
 
-/*
 resource "vault_policy" "super-user-policy" {
   depends_on = [hcp_vault_cluster_admin_token.stoffee_io]
   name       = var.vault_admin_policy_name
@@ -91,9 +88,7 @@ EOT
 resource "vault_auth_backend" "approle" {
   type = "approle"
 }
-*/
 
-/*
 // Create a policy for Ansible
 resource "vault_policy" "ansible_policy" {
   name = "ansible-policy"
@@ -115,7 +110,6 @@ path "secret/data/app/*" {
 }
 EOT
 }
-*/
 
 // Create an AppRole for Ansible
 resource "vault_approle_auth_backend_role" "ansible" {
@@ -131,14 +125,12 @@ resource "vault_approle_auth_backend_role_secret_id" "ansible" {
 }
 
 // Enable KV secrets engine version 2
-/*
 resource "vault_mount" "kv" {
   path        = "secret"
   type        = "kv"
   options     = { version = "2" }
   description = "KV Version 2 secret engine mount"
 }
-*/
 
 // Create sample secrets for the demo application
 resource "vault_kv_secret_v2" "app_db_creds" {
