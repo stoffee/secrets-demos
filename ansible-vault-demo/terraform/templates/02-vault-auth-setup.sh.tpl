@@ -9,13 +9,13 @@ echo "Starting Vault auth setup at $(date)"
 mkdir -p /root/.vault
 
 # Set up Vault environment
-VAULT_ADDR="${hcp_vault_cluster.hcp_vault.vault_public_endpoint_url}"
+VAULT_ADDR="${vault_addr}"
 echo "export VAULT_ADDR=$VAULT_ADDR" > /opt/ansible-demo/vault-env.sh
 chmod +x /opt/ansible-demo/vault-env.sh
 source /opt/ansible-demo/vault-env.sh
 
-# Use the root token from Terraform
-VAULT_TOKEN="${hcp_vault_cluster_admin_token.stoffee_io.token}"
+# Use the root token from Terraform - this needs to be passed in
+VAULT_TOKEN="${vault_token}"
 echo "$VAULT_TOKEN" > /root/.vault/root_token
 chmod 600 /root/.vault/root_token
 
