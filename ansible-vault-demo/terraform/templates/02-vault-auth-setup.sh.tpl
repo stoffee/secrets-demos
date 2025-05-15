@@ -26,9 +26,11 @@ chmod 600 /root/.vault/root_token
 # Create a new AppRole secret ID
 echo "Creating new AppRole secret ID..."
 ROLE_ID=$(curl --silent --header "X-Vault-Token: $VAULT_TOKEN" \
+--header "X-Vault-Namespace: admin" \
 $VAULT_ADDR/v1/auth/approle/role/ansible-role/role-id | jq -r .data.role_id)
 
 SECRET_ID=$(curl --silent --header "X-Vault-Token: $VAULT_TOKEN" \
+--header "X-Vault-Namespace: admin" \
 --request POST \
 $VAULT_ADDR/v1/auth/approle/role/ansible-role/secret-id | jq -r .data.secret_id)
 
