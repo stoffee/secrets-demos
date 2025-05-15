@@ -9,12 +9,16 @@ echo "Starting Vault auth setup at $(date)"
 mkdir -p /root/.vault
 
 # Set up Vault environment
+echo "Setting up Vault environment..."
+echo "put VAULT_ADDR into the opt/ansible-demo/vault-env.sh"
 VAULT_ADDR="${vault_addr}"
 echo "export VAULT_ADDR=$VAULT_ADDR" > /opt/ansible-demo/vault-env.sh
 chmod +x /opt/ansible-demo/vault-env.sh
 source /opt/ansible-demo/vault-env.sh
 
 # Use the root token from Terraform - this needs to be passed in
+echo "Setting up Vault token..."
+echo "put VAULT_TOKEN into the /root/.vault/root_token"
 VAULT_TOKEN="${vault_token}"
 echo "$VAULT_TOKEN" > /root/.vault/root_token
 chmod 600 /root/.vault/root_token
