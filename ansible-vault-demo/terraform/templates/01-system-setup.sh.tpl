@@ -21,14 +21,8 @@ pip3 install ansible hvac requests
 echo "Creating directories..."
 mkdir -p /opt/ansible-demo
 
-# Add ansible-playbook to system-wide PATH in /etc/profile
-echo 'export PATH=$PATH:/usr/local/bin' >> /etc/profile
-echo 'if [ -d "/usr/local/bin" ] ; then' >> /etc/profile
-echo '    export PATH="/usr/local/bin:$PATH"' >> /etc/profile
-echo 'fi' >> /etc/profile
-source /etc/profile
-
-# Create a more specific PATH entry for the root user
-echo 'export PATH=$PATH:/usr/local/bin' >> /root/.bashrc
+echo "Creating symlinks for ansible commands..."
+ln -sf /usr/local/bin/ansible /usr/bin/ansible
+ln -sf /usr/local/bin/ansible-playbook /usr/bin/ansible-playbook
 
 echo "System setup completed at $(date)"

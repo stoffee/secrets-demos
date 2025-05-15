@@ -27,4 +27,10 @@ mkdir -p /etc/ansible
 echo "Configuring Ansible..."
 cp /opt/ansible-demo/ansible.cfg /etc/ansible/ansible.cfg || echo "Failed to copy ansible.cfg"
 
+echo "copying the inventory file..."
+if [ -f /opt/ansible-demo/inventory ]; then
+  cp /opt/ansible-demo/inventory /etc/ansible/hosts
+  chmod 644 /etc/ansible/hosts
+fi
+
 echo "Ansible project setup completed at $(date)"
