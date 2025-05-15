@@ -33,7 +33,7 @@ resource "hcp_vault_cluster" "hcp_vault" {
   public_endpoint = "true"
 }
 
-resource "hcp_vault_cluster_admin_token" "hcpvd" {
+resource "hcp_vault_cluster_admin_token" "stoffee_io" {
   depends_on = [hcp_vault_cluster.hcp_vault]
   cluster_id = "hcp-${var.prefix}-vault-cluster"
 }
@@ -49,7 +49,7 @@ resource "vault_auth_backend" "userpass" {
 }
 
 resource "vault_generic_endpoint" "userpass_admin" {
-  depends_on           = [vault_auth_backend.userpass, hcp_vault_cluster_admin_token.hcpvd]
+  depends_on           = [vault_auth_backend.userpass, hcp_vault_cluster_admin_token.stoffee_io]
   path                 = "auth/userpass/users/${var.userpass_admin}"
   ignore_absent_fields = true
   data_json = <<EOT
@@ -61,7 +61,7 @@ EOT
 }
 
 resource "vault_policy" "super-user-policy" {
-  depends_on = [hcp_vault_cluster_admin_token.hcpvd]
+  depends_on = [hcp_vault_cluster_admin_token.stoffee_io]
   name       = var.vault_admin_policy_name
   policy     = <<EOT
 path "+/auth/*" {
