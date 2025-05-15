@@ -11,7 +11,7 @@ dnf update -y
 
 # Install required packages
 echo "Installing required packages..."
-dnf install -y python3 python3-pip git
+dnf install -y python3 python3-pip git jq
 
 # Install Ansible and required packages
 echo "Installing Ansible and dependencies..."
