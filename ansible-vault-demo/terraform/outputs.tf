@@ -1,6 +1,6 @@
 // Outputs
 output "vault_root_token" {
-  value     = nonsensitive(hcp_vault_cluster_admin_token.stoffee_io.token)
+  value     = nonsensitive(hcp_vault_cluster_admin_token.hcpvd.token)
 }
 
 output "vault_public_url" {

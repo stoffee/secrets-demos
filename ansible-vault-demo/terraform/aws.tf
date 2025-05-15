@@ -173,7 +173,7 @@ data "cloudinit_config" "ansible_config" {
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/templates/02-vault-auth-setup.sh.tpl", {
       vault_addr = hcp_vault_cluster.hcp_vault.vault_public_endpoint_url,
-      vault_token = hcp_vault_cluster_admin_token.stoffee_io.token,
+      vault_token = hcp_vault_cluster_admin_token.hcpvd.token,
       role_id    = vault_approle_auth_backend_role.ansible.role_id,
       secret_id  = vault_approle_auth_backend_role_secret_id.ansible.secret_id
     })
