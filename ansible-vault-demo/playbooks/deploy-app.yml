@@ -1,121 +1,121 @@
 ---
 - name: Deploy Application with Vault Secrets
- hosts: localhost
- gather_facts: yes
- become: yes
- vars:
-   vault_addr: "{{ lookup('env', 'VAULT_ADDR') }}"
- tasks:
-   # Authentication tasks
-   - name: Read AppRole credentials
-     ansible.builtin.shell: |
-       grep role_id /root/.vault/approle | cut -d= -f2
-     register: role_id
-     no_log: true
-     
-   - name: Read AppRole secret ID
-     ansible.builtin.shell: |
-       grep secret_id /root/.vault/approle | cut -d= -f2
-     register: secret_id
-     no_log: true
-     
-   - name: Authenticate to Vault
-     ansible.builtin.uri:
-       url: "{{ vault_addr }}/v1/auth/approle/login"
-       method: POST
-       body_format: json
-       body:
-         role_id: "{{ role_id.stdout }}"
-         secret_id: "{{ secret_id.stdout }}"
-       headers:
-         X-Vault-Namespace: "admin"
-       status_code: 200
-     register: vault_auth
-     no_log: true
-   
-   # Get secrets directly
-   - name: Get database credentials
-     ansible.builtin.uri:
-       url: "{{ vault_addr }}/v1/secret/data/app/database"
-       method: GET
-       headers:
-         X-Vault-Token: "{{ vault_auth.json.auth.client_token }}"
-         X-Vault-Namespace: "admin"
-       status_code: 200
-     register: db_creds
-     no_log: true
-     
-   - name: Get API key
-     ansible.builtin.uri:
-       url: "{{ vault_addr }}/v1/secret/data/app/api"
-       method: GET
-       headers:
-         X-Vault-Token: "{{ vault_auth.json.auth.client_token }}"
-         X-Vault-Namespace: "admin"
-       status_code: 200
-     register: api_key_resp
-     no_log: true
-   
-   - name: Set facts for deployment
-     set_fact:
-       db_username: "{{ db_creds.json.data.data.username }}"
-       db_password: "{{ db_creds.json.data.data.password }}"
-       api_key: "{{ api_key_resp.json.data.data.api_key }}"
-     no_log: true
-     
-   - name: Install required packages
-     ansible.builtin.dnf:
-       name:
-         - python3
-         - python3-pip
-       state: present
-       
-   - name: Install Flask
-     ansible.builtin.pip:
-       name: flask
-       state: present
-       
-   - name: Create application directory
-     ansible.builtin.file:
-       path: /opt/demo-app
-       state: directory
-       mode: '0755'
-       
-   - name: Create application file
-     ansible.builtin.template:
-       src: /opt/ansible-demo/playbooks/templates/app.py.j2
-       dest: /opt/demo-app/app.py
-       mode: '0644'
-     
-   - name: Create systemd service file
-     ansible.builtin.template:
-       src: /opt/ansible-demo/playbooks/templates/demo-app.service.j2
-       dest: /etc/systemd/system/demo-app.service
-       mode: '0644'
-     
-   - name: Reload systemd
-     ansible.builtin.systemd:
-       daemon_reload: yes
-       
-   - name: Start and enable the application
-     ansible.builtin.systemd:
-       name: demo-app
-       state: started
-       enabled: yes
-       
-   - name: Open firewall for Flask (if firewalld is running)
-     ansible.builtin.firewalld:
-       port: 5000/tcp
-       permanent: yes
-       state: enabled
-     ignore_errors: yes
-     
-   - name: Restart firewalld (if it's running)
-     ansible.builtin.service:
-       name: firewalld
-       state: restarted
-     ignore_errors: yes
-     
-   - name: Show application URL
-     debug:
-       msg: "Application is running at http://{{ ansible_host }}:5000"
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+  vars:
+    vault_addr: "{{ lookup('env', 'VAULT_ADDR') }}"
+  tasks:
+    # Authentication tasks
+    - name: Read AppRole credentials
+      ansible.builtin.shell: |
+        grep role_id /root/.vault/approle | cut -d= -f2
+      register: role_id
+      no_log: true
+      
+    - name: Read AppRole secret ID
+      ansible.builtin.shell: |
+        grep secret_id /root/.vault/approle | cut -d= -f2
+      register: secret_id
+      no_log: true
+      
+    - name: Authenticate to Vault
+      ansible.builtin.uri:
+        url: "{{ vault_addr }}/v1/auth/approle/login"
+        method: POST
+        body_format: json
+        body:
+          role_id: "{{ role_id.stdout }}"
+          secret_id: "{{ secret_id.stdout }}"
+        headers:
+          X-Vault-Namespace: "admin"
+        status_code: 200
+      register: vault_auth
+      no_log: true
+    
+    # Get secrets directly
+    - name: Get database credentials
+      ansible.builtin.uri:
+        url: "{{ vault_addr }}/v1/secret/data/app/database"
+        method: GET
+        headers:
+          X-Vault-Token: "{{ vault_auth.json.auth.client_token }}"
+          X-Vault-Namespace: "admin"
+        status_code: 200
+      register: db_creds
+      no_log: true
+      
+    - name: Get API key
+      ansible.builtin.uri:
+        url: "{{ vault_addr }}/v1/secret/data/app/api"
+        method: GET
+        headers:
+          X-Vault-Token: "{{ vault_auth.json.auth.client_token }}"
+          X-Vault-Namespace: "admin"
+        status_code: 200
+      register: api_key_resp
+      no_log: true
+    
+    - name: Set facts for deployment
+      set_fact:
+        db_username: "{{ db_creds.json.data.data.username }}"
+        db_password: "{{ db_creds.json.data.data.password }}"
+        api_key: "{{ api_key_resp.json.data.data.api_key }}"
+      no_log: true
+      
+    - name: Install required packages
+      ansible.builtin.dnf:
+        name:
+          - python3
+          - python3-pip
+        state: present
+        
+    - name: Install Flask
+      ansible.builtin.pip:
+        name: flask
+        state: present
+        
+    - name: Create application directory
+      ansible.builtin.file:
+        path: /opt/demo-app
+        state: directory
+        mode: '0755'
+        
+    - name: Create application file
+      ansible.builtin.template:
+        src: /opt/ansible-demo/playbooks/templates/app.py.j2
+        dest: /opt/demo-app/app.py
+        mode: '0644'
+      
+    - name: Create systemd service file
+      ansible.builtin.template:
+        src: /opt/ansible-demo/playbooks/templates/demo-app.service.j2
+        dest: /etc/systemd/system/demo-app.service
+        mode: '0644'
+      
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        
+    - name: Start and enable the application
+      ansible.builtin.systemd:
+        name: demo-app
+        state: started
+        enabled: yes
+        
+    - name: Open firewall for Flask (if firewalld is running)
+      ansible.builtin.firewalld:
+        port: 5000/tcp
+        permanent: yes
+        state: enabled
+      ignore_errors: yes
+      
+    - name: Restart firewalld (if it's running)
+      ansible.builtin.service:
+        name: firewalld
+        state: restarted
+      ignore_errors: yes
+      
+    - name: Show application URL
+      debug:
+        msg: "Application is running at http://{{ ansible_host }}:5000"
