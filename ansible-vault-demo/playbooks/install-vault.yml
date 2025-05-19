@@ -1,0 +1,56 @@
+---
+- name: Install HashiCorp Vault
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+  vars:
+    vault_version: "1.17.0"
+    vault_zip: "vault_{{ vault_version }}_linux_amd64.zip"
+    vault_url: "https://releases.hashicorp.com/vault/{{ vault_version }}/{{ vault_zip }}"
+    
+  tasks:
+    - name: Ensure unzip is installed
+      ansible.builtin.dnf:
+        name: unzip
+        state: present
+        
+    - name: Download Vault
+      ansible.builtin.get_url:
+        url: "{{ vault_url }}"
+        dest: "/tmp/{{ vault_zip }}"
+        mode: '0644'
+        
+    - name: Create temporary directory for extraction
+      ansible.builtin.file:
+        path: /tmp/vault_extract
+        state: directory
+        mode: '0755'
+        
+    - name: Extract Vault
+      ansible.builtin.unarchive:
+        src: "/tmp/{{ vault_zip }}"
+        dest: /tmp/vault_extract
+        remote_src: yes
+        
+    - name: Copy Vault binary to /usr/local/bin
+      ansible.builtin.copy:
+        src: /tmp/vault_extract/vault
+        dest: /usr/local/bin/vault
+        mode: '0755'
+        remote_src: yes
+        
+    - name: Clean up
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "/tmp/{{ vault_zip }}"
+        - "/tmp/vault_extract"
+        
+    - name: Verify Vault installation
+      ansible.builtin.command: vault --version
+      register: vault_version_output
+      
+    - name: Display Vault version
+      ansible.builtin.debug:
+        msg: "Vault {{ vault_version }} has been installed successfully: {{ vault_version_output.stdout }}"

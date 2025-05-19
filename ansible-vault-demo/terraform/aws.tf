@@ -159,6 +159,7 @@ resource "aws_instance" "app_server" {
 data "cloudinit_config" "ansible_config" {
   gzip          = true
   base64_encode = true
+  depends_on = [ hcp_vault_cluster_admin_token.hcpvd ]
 
   # Part 1: System setup and package installation
   part {

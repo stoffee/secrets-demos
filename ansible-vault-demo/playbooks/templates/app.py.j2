@@ -10,17 +10,17 @@ API_KEY = os.environ.get('API_KEY', 'default_key')
 
 @app.route('/')
 def index():
-    return """
+    return f"""
     <html>
       <head>
         <title>Vault Demo App</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }
-          .container { max-width: 800px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-          h1 { color: #1563ff; }
-          .secret { background: #f1f1f1; padding: 15px; border-radius: 5px; margin-top: 20px; }
-          .truncated { color: #666; }
-          .footer { margin-top: 30px; font-size: 0.9em; color: #666; border-top: 1px solid #eee; padding-top: 10px; }
+          body {{ font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }}
+          .container {{ max-width: 800px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+          h1 {{ color: #1563ff; }}
+          .secret {{ background: #f1f1f1; padding: 15px; border-radius: 5px; margin-top: 20px; }}
+          .truncated {{ color: #666; }}
+          .footer {{ margin-top: 30px; font-size: 0.9em; color: #666; border-top: 1px solid #eee; padding-top: 10px; }}
         </style>
       </head>
       <body>
@@ -29,9 +29,9 @@ def index():
           <p>This application demonstrates secure credential management using HashiCorp Vault and Ansible:</p>
           
           <div class="secret">
-            <p><strong>Database Username:</strong> {username}</p>
-            <p><strong>Database Password:</strong> <span class="truncated">{password_preview}...</span></p>
-            <p><strong>API Key:</strong> <span class="truncated">{api_key_preview}...</span></p>
+            <p><strong>Database Username:</strong> {DB_USERNAME}</p>
+            <p><strong>Database Password:</strong> <span class="truncated">{DB_PASSWORD[:3] if DB_PASSWORD else "***"}...</span></p>
+            <p><strong>API Key:</strong> <span class="truncated">{API_KEY[:3] if API_KEY else "***"}...</span></p>
           </div>
           
           <p>These credentials were securely retrieved from Vault using Ansible during deployment.</p>
@@ -42,11 +42,7 @@ def index():
         </div>
       </body>
     </html>
-    """.format(
-        username=DB_USERNAME,
-        password_preview=DB_PASSWORD[:3] if DB_PASSWORD else "***",
-        api_key_preview=API_KEY[:3] if API_KEY else "***"
-    )
+    """
 
 @app.route('/api/status')
 def status():
