@@ -10,7 +10,7 @@ API_KEY = os.environ.get('API_KEY', 'default_key')
 
 @app.route('/')
 def index():
-    return f"""
+    return """
     <html>
       <head>
         <title>Vault Demo App</title>
@@ -29,9 +29,9 @@ def index():
           <p>This application demonstrates secure credential management using HashiCorp Vault and Ansible:</p>
           
           <div class="secret">
-            <p><strong>Database Username:</strong> {DB_USERNAME}</p>
-            <p><strong>Database Password:</strong> <span class="truncated">{DB_PASSWORD[:3] if DB_PASSWORD else "***"}...</span></p>
-            <p><strong>API Key:</strong> <span class="truncated">{API_KEY[:3] if API_KEY else "***"}...</span></p>
+            <p><strong>Database Username:</strong> {0}</p>
+            <p><strong>Database Password:</strong> <span class="truncated">{1}...</span></p>
+            <p><strong>API Key:</strong> <span class="truncated">{2}...</span></p>
           </div>
           
           <p>These credentials were securely retrieved from Vault using Ansible during deployment.</p>
@@ -42,7 +42,11 @@ def index():
         </div>
       </body>
     </html>
-    """
+    """.format(
+        DB_USERNAME,
+        DB_PASSWORD[:3] if DB_PASSWORD else "***",
+        API_KEY[:3] if API_KEY else "***"
+    )
 
 @app.route('/api/status')
 def status():
