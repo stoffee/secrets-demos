@@ -1,11 +1,11 @@
 // Use existing HVN instead of creating a new one
 data "hcp_hvn" "existing_hvn" {
-  hvn_id = "hcp-hvn-ansible-vault-demo"
+  hvn_id = "hcp-hvn-stoffee-io"
 }
 
 // Use existing Vault cluster instead of creating a new one
 data "hcp_vault_cluster" "existing_vault" {
-  cluster_id = "hcp-ansible-vault-demo-vault-cluster"
+  cluster_id = "hcp-stoffee-io-vault-cluster"
 }
 
 // Get admin token for the existing Vault cluster
