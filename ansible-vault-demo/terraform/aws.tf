@@ -11,10 +11,10 @@ data "aws_arn" "main" {
   arn = aws_vpc.main.arn
 }
 
-resource "aws_vpc_peering_connection_accepter" "main" {
-  vpc_peering_connection_id = hcp_aws_network_peering.hvn_peering.provider_peering_id
-  auto_accept               = true
-}
+#resource "aws_vpc_peering_connection_accepter" "main" {
+#  vpc_peering_connection_id = hcp_aws_network_peering.hvn_peering.provider_peering_id
+#  auto_accept               = true
+#}
 
 // Setup internet gateway for the VPC
 resource "aws_internet_gateway" "gw" {
