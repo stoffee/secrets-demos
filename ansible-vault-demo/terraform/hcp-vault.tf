@@ -102,6 +102,7 @@ resource "vault_approle_auth_backend_role" "ansible" {
 resource "vault_approle_auth_backend_role_secret_id" "ansible" {
   backend   = vault_auth_backend.approle.path
   role_name = vault_approle_auth_backend_role.ansible.role_name
+  namespace = vault_namespace.secrets_demo.path_fq
 }
 
 // Enable KV secrets engine version 2
@@ -117,6 +118,7 @@ resource "vault_mount" "kv" {
 resource "vault_kv_secret_v2" "app_db_creds" {
   mount               = vault_mount.kv.path
   name                = "app/database"
+  namespace = vault_namespace.secrets_demo.path_fq
   delete_all_versions = true
   data_json = jsonencode({
     username = "db_user",
@@ -127,6 +129,7 @@ resource "vault_kv_secret_v2" "app_db_creds" {
 resource "vault_kv_secret_v2" "app_api_key" {
   mount               = vault_mount.kv.path
   name                = "app/api"
+  namespace = vault_namespace.secrets_demo.path_fq
   delete_all_versions = true
   data_json = jsonencode({
     api_key = random_password.api_key.result
