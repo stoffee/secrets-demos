@@ -120,7 +120,7 @@
     - name: Set up cron job for secret rotation every 2 minutes
       ansible.builtin.cron:
         name: "Rotate Vault secrets"
-        minute: "*/2"
+        minute: "*/1"
         job: "cd /opt/ansible-demo && source /opt/ansible-demo/vault-env.sh && /usr/local/bin/ansible-playbook /opt/ansible-demo/playbooks/rotate-secrets.yml > /var/log/secret-rotation.log 2>&1"
         user: root
 
