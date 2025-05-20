@@ -20,6 +20,7 @@ resource "vault_auth_backend" "userpass" {
     max_lease_ttl     = "1h45m"
     default_lease_ttl = "2h45m"
   }
+  namespace = vault_namespace.secrets_demo.path_fq
 }
 
 resource "vault_generic_endpoint" "userpass_admin" {
@@ -32,11 +33,13 @@ resource "vault_generic_endpoint" "userpass_admin" {
   "password": "${var.userpass_admin_password}"
 }
 EOT
+  namespace = vault_namespace.secrets_demo.path_fq
 }
 
 resource "vault_policy" "super-user-policy" {
   depends_on = [hcp_vault_cluster_admin_token.hcpvd]
   name       = var.vault_admin_policy_name
+  namespace = vault_namespace.secrets_demo.path_fq
   policy     = <<EOT
 path "+/auth/*" {
   capabilities = ["create", "read", "update", "delete", "list", "sudo"]
@@ -61,11 +64,13 @@ EOT
 
 resource "vault_auth_backend" "approle" {
   type = "approle"
+  namespace = vault_namespace.secrets_demo.path_fq
 }
 
 // Create a policy for Ansible
 resource "vault_policy" "ansible_policy" {
   name = "ansible-policy"
+  namespace = vault_namespace.secrets_demo.path_fq
 
   policy = <<EOT
 # Allow Ansible to read KV secrets
@@ -90,6 +95,7 @@ resource "vault_approle_auth_backend_role" "ansible" {
   backend        = vault_auth_backend.approle.path
   role_name      = "ansible-role"
   token_policies = [vault_policy.ansible_policy.name]
+  namespace = vault_namespace.secrets_demo.path_fq
 }
 
 // Generate a secret ID for the AppRole
@@ -104,6 +110,7 @@ resource "vault_mount" "kv" {
   type        = "kv"
   options     = { version = "2" }
   description = "KV Version 2 secret engine mount"
+  namespace = vault_namespace.secrets_demo.path_fq
 }
 
 // Create sample secrets for the demo application
