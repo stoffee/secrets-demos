@@ -1,3 +1,4 @@
+
 // Use existing Vault cluster instead of creating a new one
 data "hcp_vault_cluster" "existing_vault" {
   cluster_id = "hcp-stoffee-io-vault-cluster"
@@ -6,6 +7,10 @@ data "hcp_vault_cluster" "existing_vault" {
 // Get admin token for the existing Vault cluster
 resource "hcp_vault_cluster_admin_token" "hcpvd" {
   cluster_id = data.hcp_vault_cluster.existing_vault.cluster_id
+}
+
+resource "vault_namespace" "secrets_demo" {
+  path = "secrets-demo"
 }
 
 // Vault auth methods and policies setup
