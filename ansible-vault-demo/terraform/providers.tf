@@ -35,6 +35,7 @@ provider "hcp" {}
 provider "vault" {
   address = data.hcp_vault_cluster.existing_vault.vault_public_endpoint_url
   token   = hcp_vault_cluster_admin_token.hcpvd.token
+  namespace = "admin/secrets-demo"
 }
 
 provider "tfe" {

@@ -46,11 +46,6 @@ resource "aws_route_table" "rt" {
     gateway_id = aws_internet_gateway.gw.id
   }
 
-  route {
-    cidr_block                = data.hcp_hvn.existing_hvn.cidr_block
-    vpc_peering_connection_id = aws_vpc_peering_connection_accepter.main.id
-  }
-
   tags = {
     Name = "route-table-${var.prefix}"
   }
@@ -177,6 +172,7 @@ data "cloudinit_config" "ansible_config" {
       vault_token = hcp_vault_cluster_admin_token.hcpvd.token,
       role_id    = vault_approle_auth_backend_role.ansible.role_id,
       secret_id  = vault_approle_auth_backend_role_secret_id.ansible.secret_id
+      namespace  = "admin/secrets-demo"
     })
   }
 

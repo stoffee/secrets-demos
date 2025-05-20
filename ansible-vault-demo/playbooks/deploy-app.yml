@@ -5,6 +5,7 @@
   become: yes
   vars:
     vault_addr: "{{ lookup('env', 'VAULT_ADDR') }}"
+    vault_namespace: "{{ lookup('env', 'VAULT_NAMESPACE') }}"
   tasks:
     # Authentication tasks
     - name: Read AppRole credentials
@@ -28,7 +29,7 @@
           role_id: "{{ role_id.stdout }}"
           secret_id: "{{ secret_id.stdout }}"
         headers:
-          X-Vault-Namespace: "admin"
+          X-Vault-Namespace: "{{ vault_namespace }}"
         status_code: 200
       register: vault_auth
       no_log: true
@@ -40,7 +41,7 @@
         method: GET
         headers:
           X-Vault-Token: "{{ vault_auth.json.auth.client_token }}"
-          X-Vault-Namespace: "admin"
+          X-Vault-Namespace: "{{ vault_namespace }}"
         status_code: 200
       register: db_creds
       no_log: true
@@ -51,7 +52,7 @@
         method: GET
         headers:
           X-Vault-Token: "{{ vault_auth.json.auth.client_token }}"
-          X-Vault-Namespace: "admin"
+          X-Vault-Namespace: "{{ vault_namespace }}"
         status_code: 200
       register: api_key_resp
       no_log: true

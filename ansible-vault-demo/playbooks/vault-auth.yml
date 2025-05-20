@@ -4,6 +4,7 @@
   gather_facts: no
   vars:
     vault_addr: "{{ lookup('env', 'VAULT_ADDR') }}"
+    vault_namespace: "{{ lookup('env', 'VAULT_NAMESPACE') }}"
   tasks:
     - name: Read AppRole credentials
       ansible.builtin.shell: |
@@ -26,7 +27,7 @@
           role_id: "{{ role_id.stdout }}"
           secret_id: "{{ secret_id.stdout }}"
         headers:
-          X-Vault-Namespace: "admin"
+          X-Vault-Namespace: "{{ vault_namespace }}"
         status_code: 200
       register: vault_auth
       no_log: true

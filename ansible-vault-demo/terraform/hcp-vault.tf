@@ -1,33 +1,11 @@
-// Use existing HVN instead of creating a new one
-data "hcp_hvn" "existing_hvn" {
-  hvn_id = "hcp-hvn-stoffee-io"
-}
-
 // Use existing Vault cluster instead of creating a new one
 data "hcp_vault_cluster" "existing_vault" {
-  cluster_id = "hcp-stoffee-io-vault-cluster"
+  cluster_id = "hcp-ansible-vault-demo-vault-cluster"
 }
 
 // Get admin token for the existing Vault cluster
 resource "hcp_vault_cluster_admin_token" "hcpvd" {
   cluster_id = data.hcp_vault_cluster.existing_vault.cluster_id
-}
-
-// Create a network peering between the existing HVN and the AWS VPC
-resource "hcp_aws_network_peering" "hvn_peering" {
-  hvn_id          = data.hcp_hvn.existing_hvn.hvn_id
-  peering_id      = "hcp-${var.prefix}-peering"
-  peer_vpc_id     = aws_vpc.main.id
-  peer_account_id = aws_vpc.main.owner_id
-  peer_vpc_region = data.aws_arn.main.region
-}
-
-// Create an HVN route that targets your HCP network peering and matches your AWS VPC's CIDR block
-resource "hcp_hvn_route" "hvn_route" {
-  hvn_link         = data.hcp_hvn.existing_hvn.self_link
-  hvn_route_id     = "hcp-${var.prefix}-hvn-route"
-  destination_cidr = aws_vpc.main.cidr_block
-  target_link      = hcp_aws_network_peering.hvn_peering.self_link
 }
 
 // Vault auth methods and policies setup
