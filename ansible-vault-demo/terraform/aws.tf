@@ -47,7 +47,7 @@ resource "aws_route_table" "rt" {
   }
 
   route {
-    cidr_block                = hcp_hvn.my_hvn.cidr_block
+    cidr_block                = data.hcp_hvn.existing_hvn.cidr_block
     vpc_peering_connection_id = aws_vpc_peering_connection_accepter.main.id
   }
 
@@ -142,7 +142,7 @@ data "aws_ami" "rhel9" {
 
 resource "aws_instance" "app_server" {
   ami                    = data.aws_ami.rhel9.id
-  instance_type          = "t3.small"
+  instance_type          = "t3.medium"
   subnet_id              = aws_subnet.app_subnet.id
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   key_name               = var.ssh_key_name
@@ -173,7 +173,7 @@ data "cloudinit_config" "ansible_config" {
     filename     = "02-vault-auth-setup.sh"
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/templates/02-vault-auth-setup.sh.tpl", {
-      vault_addr = hcp_vault_cluster.hcp_vault.vault_public_endpoint_url,
+      vault_addr = data.hcp_vault_cluster.existing_vault.vault_public_endpoint_url,
       vault_token = hcp_vault_cluster_admin_token.hcpvd.token,
       role_id    = vault_approle_auth_backend_role.ansible.role_id,
       secret_id  = vault_approle_auth_backend_role_secret_id.ansible.secret_id

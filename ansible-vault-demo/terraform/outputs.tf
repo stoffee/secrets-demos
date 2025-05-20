@@ -4,7 +4,7 @@ output "vault_root_token" {
 }
 
 output "vault_public_url" {
-  value = hcp_vault_cluster.hcp_vault.vault_public_endpoint_url
+  value = data.hcp_vault_cluster.existing_vault.vault_public_endpoint_url
 }
 
 output "app_server_url" {
