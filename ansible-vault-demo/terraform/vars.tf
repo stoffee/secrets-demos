@@ -1,7 +1,3 @@
-#variable "aws_access_key" {}
-
-#variable "aws_secret_key" {}
-
 variable "prefix" {
   type        = string
   description = "Prefix used in resource names"
@@ -14,18 +10,11 @@ variable "region" {
   default     = "us-west-2"
 }
 
-/*
-variable "vault_addr" {
-  description = "Address of vault server to set at VAULT_ADDR"
+variable "existing-hcp-vault-cluster-name" {
   type        = string
+  description = "The name of the existing HCP Vault cluster"
+  default     = "ansible-vault-demo" 
 }
-
-variable "vault_token" {
-  description = "Token to be used when configuring Vault"
-  sensitive   = true
-}
-*/
-
 variable "namespace" {
   description = "root/admin namespace"
   default     = "admin"

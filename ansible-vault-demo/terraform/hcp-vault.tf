@@ -1,7 +1,7 @@
 
 // Use existing Vault cluster instead of creating a new one
 data "hcp_vault_cluster" "existing_vault" {
-  cluster_id = "hcp-stoffee-io-vault-cluster"
+  cluster_id = var.existing-hcp-vault-cluster-name
 }
 
 // Get admin token for the existing Vault cluster
