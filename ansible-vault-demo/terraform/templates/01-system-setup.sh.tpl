@@ -15,11 +15,11 @@ dnf install -y python3 python3-pip git jq
 
 # Install Red Hat Ansible Automation Platform
 echo "Installing Red Hat Ansible Automation Platform..."
-dnf install -y ansible-core ansible
+dnf install -y ansible-core
 
 # Install Python dependencies for Vault integration
 echo "Installing Python dependencies..."
-pip3 install hvac requests
+pip3 install hvac requests ansible
 
 # Install Ansible collections for HashiCorp Vault
 echo "Installing Ansible collections..."
