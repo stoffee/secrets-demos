@@ -54,6 +54,65 @@ This demo showcases secure credential management using HashiCorp Vault with Ansi
 
 ### Demo Flow (10-15 minutes)
 
+## 🔄 Demo Flow
+
+### Architecture Overview
+```mermaid
+graph TB
+    subgraph "☁️ HCP Vault"
+        V[HCP Vault Cluster]
+        NS[Namespace: admin/secrets-demo]
+        AR[AppRole Auth]
+        KV[KV v2 Secrets]
+    end
+    
+    subgraph "🏗️ Terraform"
+        T[Infrastructure Provisioning]
+        VPC[AWS VPC + RHEL EC2]
+    end
+    
+    subgraph "🤖 Ansible Automation"
+        AUTH[vault-auth.yml]
+        GET[get-secrets.yml] 
+        DEPLOY[deploy-app.yml]
+        ROTATE[rotate-secrets.yml]
+    end
+    
+    subgraph "🎯 Demo App"
+        FLASK[Flask App :5000]
+        CRON[Auto-rotation<br/>Every 1 min]
+    end
+    
+    T --> VPC
+    VPC --> AUTH
+    AUTH --> AR
+    GET --> KV
+    DEPLOY --> FLASK
+    CRON --> ROTATE
+    ROTATE --> KV
+```
+
+### Execution Sequence
+```mermaid
+sequenceDiagram
+    participant T as Terraform
+    participant A as Ansible  
+    participant V as HCP Vault
+    participant F as Flask App
+    
+    T->>V: Configure namespaces & auth
+    T->>A: Deploy to RHEL instance
+    A->>V: Authenticate with AppRole
+    A->>V: Retrieve secrets
+    A->>F: Deploy app with secrets
+    Note over F: App shows truncated creds
+    loop Every 1 minute
+        A->>V: Rotate secrets
+        A->>F: Restart with new secrets
+        Note over F: Zero downtime!
+    end
+```
+
 #### 1. Show the Running Application (2 minutes)
 - Navigate to the application URL from Terraform output
 - Point out the truncated credentials displayed

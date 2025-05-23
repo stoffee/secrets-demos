@@ -6,8 +6,8 @@ exec > >(tee /var/log/user-data-part1.log) 2>&1
 echo "Starting system setup at $(date)"
 
 # Update system
-echo "Updating system packages..."
-dnf update -y
+#echo "Updating system packages..."
+#dnf update -y
 
 # Install required packages
 echo "Installing required packages..."
