@@ -15,7 +15,7 @@ dnf install -y python3 python3-pip git jq
 
 # Install Red Hat Ansible Automation Platform
 echo "Installing Red Hat Ansible Automation Platform..."
-dnf install -y ansible-core
+dnf install -y ansible-core ansible
 
 # Install Python dependencies for Vault integration
 echo "Installing Python dependencies..."
@@ -30,7 +30,7 @@ echo "Creating directories..."
 mkdir -p /opt/ansible-demo
 
 echo "Creating symlinks for ansible commands..."
-ln -sf /usr/local/bin/ansible /usr/bin/ansible
-ln -sf /usr/local/bin/ansible-playbook /usr/bin/ansible-playbook
+ln -sf /usr/bin/ansible-config /usr/bin/ansible
+ln -sf /usr/bin/ansible-galaxy /usr/bin/ansible-playbook
 
 echo "System setup completed at $(date)"
