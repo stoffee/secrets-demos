@@ -137,7 +137,7 @@ data "aws_ami" "rhel9" {
 
 resource "aws_instance" "app_server" {
   ami                    = data.aws_ami.rhel9.id
-  instance_type          = "t3.medium"
+  instance_type          = "t3.micro"
   subnet_id              = aws_subnet.app_subnet.id
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   key_name               = var.ssh_key_name
