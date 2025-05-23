@@ -6,16 +6,24 @@ exec > >(tee /var/log/user-data-part1.log) 2>&1
 echo "Starting system setup at $(date)"
 
 # Update system
-#echo "Updating system packages..."
+echo "Updating system packages..."
 #dnf update -y
 
 # Install required packages
 echo "Installing required packages..."
 dnf install -y python3 python3-pip git jq
 
-# Install Ansible and required packages
-echo "Installing Ansible and dependencies..."
-pip3 install ansible hvac requests
+# Install Red Hat Ansible Automation Platform
+echo "Installing Red Hat Ansible Automation Platform..."
+dnf install -y ansible-core
+
+# Install Python dependencies for Vault integration
+echo "Installing Python dependencies..."
+pip3 install hvac requests
+
+# Install Ansible collections for HashiCorp Vault
+echo "Installing Ansible collections..."
+ansible-galaxy collection install community.hashi_vault
 
 # Create directory for Ansible project
 echo "Creating directories..."

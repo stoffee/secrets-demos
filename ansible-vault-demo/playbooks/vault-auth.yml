@@ -17,28 +17,24 @@
         grep secret_id /root/.vault/approle | cut -d= -f2
       register: secret_id
       no_log: true
-      
-    - name: Authenticate to Vault
-      ansible.builtin.uri:
-        url: "{{ vault_addr }}/v1/auth/approle/login"
-        method: POST
-        body_format: json
-        body:
-          role_id: "{{ role_id.stdout }}"
-          secret_id: "{{ secret_id.stdout }}"
-        headers:
-          X-Vault-Namespace: "{{ vault_namespace }}"
-        status_code: 200
+
+    - name: Authenticate to Vault using AppRole
+      community.hashi_vault.vault_login:
+        url: "{{ vault_addr }}"
+        auth_method: approle
+        role_id: "{{ role_id.stdout }}"
+        secret_id: "{{ secret_id.stdout }}"
+        namespace: "{{ vault_namespace }}"
       register: vault_auth
       no_log: true
-      
+
     - name: Save Vault token
       ansible.builtin.copy:
-        content: "{{ vault_auth.json.auth.client_token }}"
+        content: "{{ vault_auth.login.auth.client_token }}"
         dest: /root/.vault/root_token
         mode: '0600'
       no_log: true
       
     - name: Confirm authentication
       debug:
-        msg: "Successfully authenticated to Vault. Token expires in {{ vault_auth.json.auth.lease_duration | default(3600) }} seconds."
+        msg: "Successfully authenticated to Vault. Token expires in {{ vault_auth.login.auth.lease_duration | default(3600) }} seconds."
