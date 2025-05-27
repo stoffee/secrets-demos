@@ -9,8 +9,7 @@ echo "Starting AAP Controller setup at $(date)"
 echo "Downloading Red Hat Ansible Automation Platform..."
 cd /opt
 
-# Red Hat Developer offline token (you need to provide this)
-# Get from: https://access.redhat.com/management/api
+# Red Hat Developer offline token (passed from Terraform)
 OFFLINE_TOKEN="${redhat_token}"
 
 if [ -n "$OFFLINE_TOKEN" ]; then
@@ -39,7 +38,7 @@ if [ -f "ansible-automation-platform-setup-bundle-2.5-1-x86_64.tar.gz" ]; then
   cd ansible-automation-platform-setup-bundle-2.5-1
   
   # Create inventory for single-node install
-  cat > inventory << EOF
+  cat > inventory << 'EOF'
 [automationcontroller]
 localhost ansible_connection=local
 
