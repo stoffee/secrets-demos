@@ -5,17 +5,10 @@ set -ex  # Exit on error, print commands
 exec > >(tee /var/log/user-data-part1.log) 2>&1
 echo "Starting system setup at $(date)"
 
-# Update system
-echo "Updating system packages..."
-#dnf update -y
-
 # Install required packages
 echo "Installing required packages..."
-dnf install -y python3 python3-pip git jq
-
-# Install Red Hat Ansible Automation Platform
 echo "Installing Red Hat Ansible Automation Platform..."
-dnf install -y ansible-core
+dnf install -y python3 python3-pip git jq podman ansible-core
 
 # Install Python dependencies for Vault integration
 echo "Installing Python dependencies..."
@@ -32,5 +25,13 @@ mkdir -p /opt/ansible-demo
 echo "Creating symlinks for ansible commands..."
 ln -sf /usr/bin/ansible-config /usr/bin/ansible
 ln -sf /usr/bin/ansible-galaxy /usr/bin/ansible-playbook
+
+echo "Configuring Podman for execution environments..."
+systemctl enable --now podman.socket
+
+echo "Verifying Red Hat Ansible installation..."
+ansible --version
+ansible-navigator --version || echo "ansible-navigator available for enterprise execution"
+
 
 echo "System setup completed at $(date)"

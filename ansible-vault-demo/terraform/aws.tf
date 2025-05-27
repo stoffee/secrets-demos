@@ -137,7 +137,7 @@ data "aws_ami" "rhel9" {
 
 resource "aws_instance" "app_server" {
   ami                    = data.aws_ami.rhel9.id
-  instance_type          = "t3.micro"
+  instance_type          = "m5.large"
   subnet_id              = aws_subnet.app_subnet.id
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   key_name               = var.ssh_key_name
@@ -214,4 +214,12 @@ data "cloudinit_config" "ansible_config" {
     echo "Firewall configuration completed at $(date)"
     EOF
   }
+
+  part {
+  filename     = "06-aap-controller-setup.sh"
+  content_type = "text/x-shellscript"
+  content = templatefile("${path.module}/templates/06-aap-controller-setup.sh.tpl", {
+    vault_addr = data.hcp_vault_cluster.existing_vault.vault_public_endpoint_url
+  })
+}
 }
