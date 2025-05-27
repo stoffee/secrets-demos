@@ -221,6 +221,7 @@ data "cloudinit_config" "ansible_config" {
   content_type = "text/x-shellscript"
   content = templatefile("${path.module}/templates/06-aap-controller-setup.sh.tpl", {
     vault_addr = data.hcp_vault_cluster.existing_vault.vault_public_endpoint_url
+    redhat_token = var.redhat_offline_token
   })
 }
 }
