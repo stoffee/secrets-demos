@@ -173,6 +173,7 @@ data "cloudinit_config" "ansible_config" {
       role_id    = vault_approle_auth_backend_role.ansible.role_id,
       secret_id  = vault_approle_auth_backend_role_secret_id.ansible.secret_id
       namespace  = "admin/secrets-demo"
+      redhat_token = var.redhat_offline_token
     })
   }
 

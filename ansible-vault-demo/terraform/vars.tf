@@ -63,3 +63,9 @@ variable "ssh_key_name" {
     description = "Name of the SSH key pair to use for EC2 instances"
     type        = string
 }
+
+variable "redhat_offline_token" {
+  description = "Red Hat Developer offline token"
+  type        = string
+  sensitive   = true
+}

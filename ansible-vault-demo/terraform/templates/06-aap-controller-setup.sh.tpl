@@ -5,63 +5,66 @@ set -ex
 exec > >(tee /var/log/user-data-part6.log) 2>&1
 echo "Starting AAP Controller setup at $(date)"
 
-# Install AWX using Docker Compose
-echo "Installing AWX using containers..."
-dnf install -y podman podman-compose git
-
-# Clone AWX
+# Download Red Hat AAP bundle using offline token
+echo "Downloading Red Hat Ansible Automation Platform..."
 cd /opt
-git clone https://github.com/ansible/awx.git
-cd awx
 
-# Use AWX development environment
-make docker-compose-build
-make docker-compose
+# Red Hat Developer offline token (you need to provide this)
+# Get from: https://access.redhat.com/management/api
+OFFLINE_TOKEN="${redhat_token}"
 
-# Wait for services
-sleep 60
-
-# Get admin password
-docker logs tools_awx_1 2>&1 | grep -i password
-
-# Configure firewall for AWX port 8043
-if command -v firewall-cmd &> /dev/null; then
-  firewall-cmd --permanent --add-port=8043/tcp
-  firewall-cmd --permanent --add-port=8080/tcp
-  firewall-cmd --reload
+if [ -n "$OFFLINE_TOKEN" ]; then
+  echo "Using Red Hat offline token for authenticated download..."
+  
+  # Get access token
+  ACCESS_TOKEN=$(curl -s https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token \
+    -d grant_type=refresh_token \
+    -d client_id=rhsm-api \
+    -d refresh_token="$OFFLINE_TOKEN" | jq -r .access_token)
+  
+  # Download AAP bundle with authentication
+  curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+    -o ansible-automation-platform-setup-bundle-2.5-1-x86_64.tar.gz \
+    "https://api.access.redhat.com/management/v1/images/cpe:/a:redhat:ansible_automation_platform:2.5::el8/download"
+else
+  echo "No offline token provided - attempting direct download..."
+  curl -L -o ansible-automation-platform-setup-bundle-2.5-1-x86_64.tar.gz \
+    "https://developers.redhat.com/content-gateway/file/ansible/Ansible_Automation_Platform_2.5/ansible-automation-platform-setup-bundle-2.5-1-x86_64.tar.gz"
 fi
 
-# Configure SSL certificate (self-signed for demo)
-echo "Configuring SSL certificate..."
-mkdir -p /etc/tower/ssl
-openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
-  -subj "/C=US/ST=CA/L=San Francisco/O=Demo/CN=$(hostname -f)" \
-  -keyout /etc/tower/ssl/tower.key \
-  -out /etc/tower/ssl/tower.crt 2>/dev/null || true
+# If download succeeded, extract and install
+if [ -f "ansible-automation-platform-setup-bundle-2.5-1-x86_64.tar.gz" ]; then
+  echo "Extracting AAP bundle..."
+  tar -xzf ansible-automation-platform-setup-bundle-2.5-1-x86_64.tar.gz
+  cd ansible-automation-platform-setup-bundle-2.5-1
+  
+  # Create inventory for single-node install
+  cat > inventory << EOF
+[automationcontroller]
+localhost ansible_connection=local
+
+[all:vars]
+admin_password='RedHat123!'
+pg_host=''
+pg_port=''
+pg_database='awx'
+pg_username='awx'
+pg_password='RedHat123!'
+pg_sslmode='prefer'
+EOF
+
+  # Run installer
+  ./setup.sh -i inventory
+else
+  echo "AAP bundle download failed - continuing without web UI"
+fi
 
 # Configure firewall
-echo "Configuring firewall..."
 if command -v firewall-cmd &> /dev/null; then
   firewall-cmd --permanent --add-port=443/tcp
+  firewall-cmd --permanent --add-port=80/tcp
   firewall-cmd --reload
 fi
 
-# Start and enable services
-echo "Starting AAP Controller services..."
-systemctl enable --now automation-controller 2>/dev/null || {
-    echo "Using alternative service startup..."
-    systemctl enable --now nginx
-    systemctl enable --now awx-web
-    systemctl enable --now awx-task
-}
-
-# Wait for services to start
-echo "Waiting for AAP Controller to be ready..."
-sleep 30
-
-# Check service status
-systemctl status automation-controller || systemctl status awx-web || echo "Controller may not be fully configured"
-
-echo "AWX Controller setup completed at $(date)"
-echo "Access AWX at: https://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):8043/"
-echo "Default credentials: admin / password"
+echo "AAP Controller setup completed at $(date)"
+echo "Access at: https://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)/"
