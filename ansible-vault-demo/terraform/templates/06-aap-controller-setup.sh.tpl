@@ -11,7 +11,7 @@ cd /opt
 
 # Red Hat Developer offline token (you need to provide this)
 # Get from: https://access.redhat.com/management/api
-OFFLINE_TOKEN="${redhat_token}"
+OFFLINE_TOKEN="${REDHAT_OFFLINE_TOKEN:-}"
 
 if [ -n "$OFFLINE_TOKEN" ]; then
   echo "Using Red Hat offline token for authenticated download..."
