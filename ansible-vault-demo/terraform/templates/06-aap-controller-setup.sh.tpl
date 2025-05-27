@@ -5,33 +5,31 @@ set -ex
 exec > >(tee /var/log/user-data-part6.log) 2>&1
 echo "Starting AAP Controller setup at $(date)"
 
-# Install AAP Controller (requires subscription but we'll try)
-echo "Installing Ansible Automation Platform Controller..."
-dnf install -y automation-controller || {
-    echo "Failed to install automation-controller - trying alternative method"
-    # Alternative: Use Red Hat's installer script
-    curl -O https://releases.ansible.com/ansible-automation-platform/setup/ansible-automation-platform-setup-latest.tar.gz
-    tar -xzf ansible-automation-platform-setup-*.tar.gz
-    cd ansible-automation-platform-setup-*
-    
-    # Create basic inventory for single-node install
-    cat > inventory << EOF
-[automationcontroller]
-localhost ansible_connection=local
+# Install AWX using Docker Compose
+echo "Installing AWX using containers..."
+dnf install -y podman podman-compose git
 
-[all:vars]
-admin_password='RedHat123!'
-pg_host=''
-pg_port=''
-pg_database='awx'
-pg_username='awx'
-pg_password='RedHat123!'
-pg_sslmode='prefer'
-EOF
+# Clone AWX
+cd /opt
+git clone https://github.com/ansible/awx.git
+cd awx
 
-    # Run installer
-    ./setup.sh -i inventory || echo "Controller install failed - continuing with CLI tools"
-}
+# Use AWX development environment
+make docker-compose-build
+make docker-compose
+
+# Wait for services
+sleep 60
+
+# Get admin password
+docker logs tools_awx_1 2>&1 | grep -i password
+
+# Configure firewall for AWX port 8043
+if command -v firewall-cmd &> /dev/null; then
+  firewall-cmd --permanent --add-port=8043/tcp
+  firewall-cmd --permanent --add-port=8080/tcp
+  firewall-cmd --reload
+fi
 
 # Configure SSL certificate (self-signed for demo)
 echo "Configuring SSL certificate..."
@@ -64,6 +62,6 @@ sleep 30
 # Check service status
 systemctl status automation-controller || systemctl status awx-web || echo "Controller may not be fully configured"
 
-echo "AAP Controller setup completed at $(date)"
-echo "Access the Controller at: https://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)/"
-echo "Default credentials: admin / RedHat123!"
+echo "AWX Controller setup completed at $(date)"
+echo "Access AWX at: https://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):8043/"
+echo "Default credentials: admin / password"
