@@ -11,8 +11,8 @@ API_KEY = os.environ.get('API_KEY', 'default_key')
 @app.route('/')
 def index():
     username = DB_USERNAME
-    password = DB_PASSWORD[:3] if DB_PASSWORD else "***"
-    api_key = API_KEY[:3] if API_KEY else "***"
+    password = DB_PASSWORD if DB_PASSWORD else "***"
+    api_key = API_KEY if API_KEY else "***"
     
     return """
     <html>
@@ -34,8 +34,8 @@ def index():
           
           <div class="secret">
             <p><strong>Database Username:</strong> %s</p>
-            <p><strong>Database Password:</strong> <span class="truncated">%s.......</span></p>
-            <p><strong>API Key:</strong> <span class="truncated">%s.......</span></p>
+            <p><strong>Database Password:</strong> <span class="truncated">%s</span></p>
+            <p><strong>API Key:</strong> <span class="truncated">%s</span></p>
           </div>
           
           <p>These credentials were securely retrieved from Vault using Ansible during deployment.</p>
