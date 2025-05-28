@@ -102,22 +102,15 @@ sequenceDiagram
     
     Note over T,V: 🔐 Initial Secret Setup Phase
     T->>V: Use HCP admin token to configure Vault
-    T->>V: Create namespace (admin/secrets-demo)
-    T->>V: Configure AppRole auth method
-    T->>V: Generate Role ID + Secret ID for Ansible
+    T->>V: Configure Vault (namespaces, AppRole, generate credentials)
     T->>V: Seed initial secrets (DB creds, API key)
     
     Note over T,A: 🚀 Infrastructure Deployment Phase  
-    T->>A: Deploy RHEL instance with cloud-init
-    T-->>A: Pass admin token via user-data (bootstrap only)
-    T-->>A: Pass AppRole credentials via user-data
-    T-->>A: Pass Vault URL + namespace via user-data
+    T->>A: Deploy RHEL instance to host the app
+    T-->>A: Securely pass admin token + AppRole credentials + Vault config via user-data
     
     Note over A,V: 🔑 Ansible Authentication Phase
-    A->>V: Use admin token to verify AppRole setup (bootstrap)
-    A->>V: Switch to AppRole authentication (role_id + secret_id)
-    V-->>A: Return Ansible-scoped token
-    A->>A: Store Ansible token locally (/root/.vault/root_token)
+    A->>V: Authenticate with AppRole (role_id + secret_id) → get Ansible token
     
     Note over A,F: 📦 Application Deployment Phase
     A->>V: Retrieve DB credentials using Ansible token
@@ -131,9 +124,6 @@ sequenceDiagram
     
     Note over A,F: 🔄 Continuous Secret Rotation (Every 1 minute)
     loop Every 1 minute via cron
-        A->>V: Generate new random passwords
-        A->>V: Update DB password in Vault (using Ansible token)
-        A->>V: Update API key in Vault (using Ansible token)
         A->>V: Retrieve updated secrets
         V-->>A: Return new encrypted secrets
         A->>F: Update systemd service file with new env vars
