@@ -109,34 +109,16 @@ resource "aws_security_group" "app_sg" {
 }
 
 
-# Add this data source to your main.tf
-data "aws_ami" "rhel9" {
-  most_recent = true
-  owners      = ["309956199498"] # Red Hat's owner ID
+# HC-approved base AMI with EDR (HC-COMPUTE-011)
+module "base_ami" {
+  source = "git::ssh://git@github.com/stoffee/terraform-aws-hc-base-ami.git"
 
-  filter {
-    name   = "name"
-    values = ["RHEL-9*"]
-  }
-
-  filter {
-    name   = "architecture"
-    values = ["x86_64"]
-  }
-
-  filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
+  os_flavor    = "rhel-9"
+  architecture = "x86_64"
 }
 
 resource "aws_instance" "app_server" {
-  ami                    = data.aws_ami.rhel9.id
+  ami                    = module.base_ami.ami_id
   instance_type          = "m5.large"
   subnet_id              = aws_subnet.app_subnet.id
   vpc_security_group_ids = [aws_security_group.app_sg.id]

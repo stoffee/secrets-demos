@@ -53,12 +53,6 @@ variable "tfc_hostname" {
   description = "The hostname of the TFC or TFE instance you'd like to use with Vault"
 }
 
-variable "amazon_linux_ami" {
-  description = "AMI ID for RHEL 9"
-  type        = string
-  default     = "ami-080c01c53e80e8a3d" # RHEL 9 latest in us-west-2
-}
-
 variable "ssh_key_name" {
     description = "Name of the SSH key pair to use for EC2 instances"
     type        = string
